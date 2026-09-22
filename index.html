@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Library</title>
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #0e0e12; }
+    #app { width: 100vw; height: 100vh; }
+    button {
+      background: #3a2e1e; color: #e8d8a8; border: 1px solid #8b5a2b;
+      padding: 6px 12px; font-family: monospace; cursor: pointer;
+    }
+    button:disabled { opacity: 0.4; cursor: default; }
+    button:hover:not(:disabled) { background: #5a4020; }
+    input, textarea { font-family: monospace; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
