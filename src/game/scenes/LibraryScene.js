@@ -80,26 +80,26 @@ export default class LibraryScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("player", "/assets/player.png");
-    this.load.image("desk", "/assets/desk.png");
-    this.load.image("cart_0", "/assets/cart_0.png");
-    this.load.image("cart_1", "/assets/cart_1.png");
-    this.load.image("cart_2", "/assets/cart_2.png");
+    this.load.image("player", "assets/player.png");
+    this.load.image("desk", "assets/desk.png");
+    this.load.image("cart_0", "assets/cart_0.png");
+    this.load.image("cart_1", "assets/cart_1.png");
+    this.load.image("cart_2", "assets/cart_2.png");
 
-    this.load.image("cat_lie", "/assets/cat_lie.png");
-    this.load.image("cat_sit", "/assets/cat_sit.png");
-    this.load.image("cat_walk", "/assets/cat_walk.png");
+    this.load.image("cat_lie", "assets/cat_lie.png");
+    this.load.image("cat_sit", "assets/cat_sit.png");
+    this.load.image("cat_walk", "assets/cat_walk.png");
 
     for (let i = 0; i <= 5; i++) {
-      this.load.image(`shelf_${i}`, `/assets/shelf_${i}.png`);
+      this.load.image(`shelf_${i}`, `assets/shelf_${i}.png`);
     }
     for (let i = 0; i <= 25; i++) {
-      this.load.image(`wardrobe_${i}`, `/assets/wardrobe_${i}.png`);
+      this.load.image(`wardrobe_${i}`, `assets/wardrobe_${i}.png`);
     }
 
     // звуки
-    this.load.audio("bg-music", "/assets/Fon.mp3");
-    this.load.audio("step", "/assets/step.wav");
+    this.load.audio("bg-music", "assets/Fon.mp3");
+    this.load.audio("step", "assets/step.wav");
   }
 
   create() {
@@ -578,7 +578,7 @@ export default class LibraryScene extends Phaser.Scene {
       }
     }
 
-    // телега — физика + резинка
+    // телега
     if (this.attachedCartSprite) {
       const v = this.attachedCartSprite.visual;
       const cartBody = v.body;
