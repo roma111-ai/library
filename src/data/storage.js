@@ -122,7 +122,7 @@ export function importWorldFromFile(file, callback) {
 // ─────────────────────────────────────────────────────────────
 // ОБЛАЧНОЕ СОХРАНЕНИЕ (Layero + Neon)
 
-const CLOUD_URL = "https://library-backend.layero.app";
+const CLOUD_URL = "https://library-backend-cli.layero.app";
 
 export async function saveToCloud(world) {
   try {
