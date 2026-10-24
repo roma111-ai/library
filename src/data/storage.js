@@ -125,13 +125,28 @@ export function importWorldFromFile(file, callback) {
 const CLOUD_URL = "https://library-backend-cli.layero.app";
 
 export async function saveToCloud(world) {
+  // 1. Спрашиваем пароль каждый раз
+  const token = prompt("Введи пароль для сохранения в облако:");
+  
+  // Если нажали "Отмена" или ввели пустоту
+  if (!token) {
+    throw new Error("Сохранение отменено");
+  }
+
   try {
     const res = await fetch(`${CLOUD_URL}/api/save`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-save-token": token.trim(), // .trim() на случай лишних пробелов
+      },
       body: JSON.stringify(world),
     });
-    
+
+    if (res.status === 403) {
+      throw new Error("Неверный пароль");
+    }
+
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       throw new Error(errorData.error || `Ошибка сервера: ${res.status}`);

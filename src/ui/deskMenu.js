@@ -120,22 +120,24 @@ export function openDeskMenu(world, hallId, { onClose, getPlayerPos, onChange })
       });
     };
 
-    // НОВОЕ: Сохранить в облако
+        // Сохранить в облако
     document.getElementById("btn-cloud-save").onclick = async () => {
       try {
         const btn = document.getElementById("btn-cloud-save");
         btn.textContent = "⏳ Сохранение...";
         btn.disabled = true;
-        
+
         await saveToCloud(world);
-        
+
         btn.textContent = "✅ Сохранено!";
         setTimeout(() => {
           btn.textContent = "☁️ В облако";
           btn.disabled = false;
         }, 2000);
       } catch (err) {
-        alert("Ошибка сохранения в облако: " + err.message);
+        if (!err.message.includes("отменено")) {
+          alert(err.message);
+        }
         document.getElementById("btn-cloud-save").textContent = "☁️ В облако";
         document.getElementById("btn-cloud-save").disabled = false;
       }
