@@ -8,7 +8,7 @@ import {
   getHallRootNodes,
 } from "../data/model.js";
 import { renderBuildMap } from "./buildMap.js";
-import { exportWorldToFile, importWorldFromFile } from "../data/storage.js";
+import { exportWorldToFile, importWorldFromFile, saveToCloud, loadFromCloud } from "../data/storage.js";
 
 const DEPTH_ICONS = ["📕", "📚", "🗄", "🏛", "🏢"];
 
@@ -75,6 +75,8 @@ export function openDeskMenu(world, hallId, { onClose, getPlayerPos, onChange })
           ">🏗 Строительство</button>
           <button id="btn-export" style="padding:6px 14px;">💾 Экспорт</button>
           <button id="btn-import" style="padding:6px 14px;">📂 Импорт</button>
+          <button id="btn-cloud-save" style="padding:6px 14px; background:#2e4a3a; border-color:#4a8b5a; color:#ccffdd;">☁️ В облако</button>
+          <button id="btn-cloud-load" style="padding:6px 14px; background:#3a2e4a; border-color:#8b5a8b; color:#ffccff;">☁️ Из облака</button>
           <button id="desk-close" style="padding:6px 14px;">Закрыть</button>
         </div>
       </div>
@@ -116,6 +118,59 @@ export function openDeskMenu(world, hallId, { onClose, getPlayerPos, onChange })
         alert("Мир импортирован. Игра перезагрузится.");
         location.reload();
       });
+    };
+
+    // НОВОЕ: Сохранить в облако
+    document.getElementById("btn-cloud-save").onclick = async () => {
+      try {
+        const btn = document.getElementById("btn-cloud-save");
+        btn.textContent = "⏳ Сохранение...";
+        btn.disabled = true;
+        
+        await saveToCloud(world);
+        
+        btn.textContent = "✅ Сохранено!";
+        setTimeout(() => {
+          btn.textContent = "☁️ В облако";
+          btn.disabled = false;
+        }, 2000);
+      } catch (err) {
+        alert("Ошибка сохранения в облако: " + err.message);
+        document.getElementById("btn-cloud-save").textContent = "☁️ В облако";
+        document.getElementById("btn-cloud-save").disabled = false;
+      }
+    };
+
+    // НОВОЕ: Загрузить из облака
+    document.getElementById("btn-cloud-load").onclick = async () => {
+      const confirmed = confirm("Загрузить мир из облака? Текущий мир будет заменён.");
+      if (!confirmed) return;
+
+      try {
+        const btn = document.getElementById("btn-cloud-load");
+        btn.textContent = "⏳ Загрузка...";
+        btn.disabled = true;
+
+        const cloudWorld = await loadFromCloud();
+        
+        // Проверка, что пришло хоть что-то валидное
+        if (!cloudWorld || Object.keys(cloudWorld).length === 0) {
+          alert("В облаке пока нет сохранений.");
+          btn.textContent = "☁️ Из облака";
+          btn.disabled = false;
+          return;
+        }
+
+        // Сохраняем в localStorage
+        localStorage.setItem("knowledge-library-world-v6", JSON.stringify(cloudWorld));
+        
+        alert("Мир загружен из облака. Игра перезагрузится.");
+        location.reload();
+      } catch (err) {
+        alert("Ошибка загрузки из облака: " + err.message);
+        document.getElementById("btn-cloud-load").textContent = "☁️ Из облака";
+        document.getElementById("btn-cloud-load").disabled = false;
+      }
     };
 
     const content = document.getElementById("tab-content");

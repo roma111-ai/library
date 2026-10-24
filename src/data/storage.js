@@ -118,3 +118,43 @@ export function importWorldFromFile(file, callback) {
   };
   reader.readAsText(file);
 }
+
+// ─────────────────────────────────────────────────────────────
+// ОБЛАЧНОЕ СОХРАНЕНИЕ (Layero + Neon)
+
+const CLOUD_URL = "https://library-backend.layero.app";
+
+export async function saveToCloud(world) {
+  try {
+    const res = await fetch(`${CLOUD_URL}/api/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(world),
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || `Ошибка сервера: ${res.status}`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error("Ошибка сохранения в облако:", err);
+    throw err;
+  }
+}
+
+export async function loadFromCloud() {
+  try {
+    // Добавляем случайный параметр, чтобы браузер не кэшировал ответ
+    const res = await fetch(`${CLOUD_URL}/api/save?t=${Date.now()}`);
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || `Ошибка сервера: ${res.status}`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error("Ошибка загрузки из облака:", err);
+    throw err;
+  }
+}
