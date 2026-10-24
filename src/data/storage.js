@@ -159,10 +159,25 @@ export async function saveToCloud(world) {
 }
 
 export async function loadFromCloud() {
+  // Спрашиваем пароль
+  const token = prompt("Введи пароль для загрузки из облака:");
+  
+  if (!token) {
+    throw new Error("Загрузка отменена");
+  }
+
   try {
-    // Добавляем случайный параметр, чтобы браузер не кэшировал ответ
-    const res = await fetch(`${CLOUD_URL}/api/save?t=${Date.now()}`);
-    
+    const res = await fetch(`${CLOUD_URL}/api/save?t=${Date.now()}`, {
+      method: "GET",
+      headers: {
+        "x-save-token": token.trim(), // передаём пароль на сервер
+      },
+    });
+
+    if (res.status === 403) {
+      throw new Error("Неверный пароль");
+    }
+
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       throw new Error(errorData.error || `Ошибка сервера: ${res.status}`);

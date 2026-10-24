@@ -144,7 +144,7 @@ export function openDeskMenu(world, hallId, { onClose, getPlayerPos, onChange })
     };
 
     // НОВОЕ: Загрузить из облака
-    document.getElementById("btn-cloud-load").onclick = async () => {
+        document.getElementById("btn-cloud-load").onclick = async () => {
       const confirmed = confirm("Загрузить мир из облака? Текущий мир будет заменён.");
       if (!confirmed) return;
 
@@ -155,7 +155,6 @@ export function openDeskMenu(world, hallId, { onClose, getPlayerPos, onChange })
 
         const cloudWorld = await loadFromCloud();
         
-        // Проверка, что пришло хоть что-то валидное
         if (!cloudWorld || Object.keys(cloudWorld).length === 0) {
           alert("В облаке пока нет сохранений.");
           btn.textContent = "☁️ Из облака";
@@ -163,13 +162,16 @@ export function openDeskMenu(world, hallId, { onClose, getPlayerPos, onChange })
           return;
         }
 
-        // Сохраняем в localStorage
         localStorage.setItem("knowledge-library-world-v6", JSON.stringify(cloudWorld));
         
         alert("Мир загружен из облака. Игра перезагрузится.");
         location.reload();
       } catch (err) {
-        alert("Ошибка загрузки из облака: " + err.message);
+        if (!err.message.includes("отменена") && !err.message.includes("Неверный")) {
+          alert("Ошибка загрузки: " + err.message);
+        } else if (err.message.includes("Неверный")) {
+          alert("Неверный пароль");
+        }
         document.getElementById("btn-cloud-load").textContent = "☁️ Из облака";
         document.getElementById("btn-cloud-load").disabled = false;
       }
