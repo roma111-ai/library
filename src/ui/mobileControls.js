@@ -1,22 +1,22 @@
 // src/ui/mobileControls.js
 
 export function createMobileControls(onAction) {
-  // Проверяем и тачскрин, и ширину экрана (чтобы на ноутбуках с тачскрином не было джойстика)
+  // Проверка на мобильное устройство и вертикальный экран
+  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  const isMobileScreen = window.innerWidth <= 1024;
+  const isPortrait = window.innerHeight > window.innerWidth;
   
-  // Если это ПК или широкий экран — ничего не создаём
-  if (!isTouch || !isMobileScreen) return null;
+  if (!isTouch || (!isMobileUA && window.innerWidth > 1024) || !isPortrait) return null;
 
-  // --- 1. ДЖОЙСТИК (левая сторона) ---
+  // --- 1. ДЖОЙСТИК (слева) ---
   const joystickContainer = document.createElement("div");
   joystickContainer.id = "mobile-joystick";
   joystickContainer.style.cssText = `
     position: fixed;
-    bottom: 100px;
-    left: 30px;
-    width: 140px;
-    height: 140px;
+    bottom: 80px;   /* Поднимаем над инвентарём */
+    left: 20px;
+    width: 130px;
+    height: 130px;
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
@@ -29,9 +29,9 @@ export function createMobileControls(onAction) {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 60px;
-    height: 60px;
-    background: rgba(255, 255, 255, 0.5);
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.6);
     border-radius: 50%;
     transform: translate(-50%, -50%);
     pointer-events: none;
@@ -39,22 +39,22 @@ export function createMobileControls(onAction) {
   joystickContainer.appendChild(joystickKnob);
   document.body.appendChild(joystickContainer);
 
-  // --- 2. КНОПКА ДЕЙСТВИЯ (правая сторона) ---
+  // --- 2. КНОПКА ДЕЙСТВИЯ E (справа) ---
   const actionBtn = document.createElement("div");
   actionBtn.id = "mobile-action-btn";
   actionBtn.textContent = "E";
   actionBtn.style.cssText = `
     position: fixed;
-    bottom: 120px;
-    right: 40px;
-    width: 90px;
-    height: 90px;
-    background: rgba(255, 217, 102, 0.2);
+    bottom: 90px;
+    right: 20px;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 217, 102, 0.3);
     border: 3px solid #ffd966;
     border-radius: 50%;
     color: #ffd966;
     font-family: monospace;
-    font-size: 36px;
+    font-size: 32px;
     font-weight: bold;
     display: flex;
     align-items: center;
@@ -107,7 +107,7 @@ export function createMobileControls(onAction) {
     let dx = touch.clientX - centerX;
     let dy = touch.clientY - centerY;
 
-    const maxDist = rect.width / 2 - 30; // 30 - половина размера ручки
+    const maxDist = rect.width / 2 - 25;
     const dist = Math.sqrt(dx * dx + dy * dy);
     
     if (dist > maxDist) {
@@ -126,16 +126,16 @@ export function createMobileControls(onAction) {
   joystickContainer.addEventListener("touchend", handleTouchEnd, { passive: false });
   joystickContainer.addEventListener("touchcancel", handleTouchEnd, { passive: false });
 
-  // --- 4. ЛОГИКА КНОПКИ E ---
+  // --- 4. КНОПКА E ---
   actionBtn.addEventListener("touchstart", (e) => {
     e.preventDefault();
-    actionBtn.style.background = "rgba(255, 217, 102, 0.5)";
+    actionBtn.style.background = "rgba(255, 217, 102, 0.7)";
     if (onAction) onAction();
   }, { passive: false });
 
   actionBtn.addEventListener("touchend", (e) => {
     e.preventDefault();
-    actionBtn.style.background = "rgba(255, 217, 102, 0.2)";
+    actionBtn.style.background = "rgba(255, 217, 102, 0.3)";
   }, { passive: false });
 
   return {
