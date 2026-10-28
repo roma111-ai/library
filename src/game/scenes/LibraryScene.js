@@ -32,6 +32,7 @@ import {
   rerenderCartPanel,
 } from "../../ui/cartPanel.js";
 import Cat from "../entities/Cat.js";
+import { createMobileControls } from "../../ui/mobileControls.js"; // <-- НОВЫЙ ИМПОРТ
 
 const INTERACT_DISTANCE = 160;
 const DESK_SIZE = 128;
@@ -131,6 +132,11 @@ export default class LibraryScene extends Phaser.Scene {
 
     this.keys = this.input.keyboard.addKeys("W,A,S,D,E,T");
 
+    // Инициализируем мобильное управление
+    this.mobileControls = createMobileControls(() => {
+      this.tryInteract();
+    });
+
     this.promptText = this.add.text(0, 0, "[E] открыть", {
       fontSize: "16px", color: "#ffffff",
       backgroundColor: "#000000aa", padding: { x: 8, y: 4 },
@@ -147,6 +153,11 @@ export default class LibraryScene extends Phaser.Scene {
     this.cat = null;
 
     this._lastPromptText = null;
+    
+    // Переменные для взаимодействия
+    this.nearDesk = false;
+    this.nearNodeId = null;
+    this.nearCart = false;
 
     // звуки
     this.bgMusic = this.sound.add("bg-music", { loop: true, volume: 0.2 });
@@ -553,6 +564,15 @@ export default class LibraryScene extends Phaser.Scene {
     if (this.keys.W.isDown) vy = -speed;
     if (this.keys.S.isDown) vy = speed;
 
+    // Если есть мобильный джойстик — берём вектор оттуда
+    if (this.mobileControls) {
+      const vec = this.mobileControls.getVector();
+      if (vec.x !== 0 || vec.y !== 0) {
+        vx = vec.x * speed;
+        vy = vec.y * speed;
+      }
+    }
+
     body.setVelocity(vx, vy);
     this.player.x = Math.round(this.player.x);
     this.player.y = Math.round(this.player.y);
@@ -723,8 +743,6 @@ export default class LibraryScene extends Phaser.Scene {
         this.deskSprite.visual.y - DESK_SIZE / 2 - 40
       );
       promptText = "[E] Стол";
-
-      if (Phaser.Input.Keyboard.JustDown(this.keys.E)) this.openDesk();
     } else if (nearNode) {
       const s = this.nodeSprites[closest];
       this.promptText.setVisible(true);
@@ -738,8 +756,6 @@ export default class LibraryScene extends Phaser.Scene {
       }
       this.promptText.setPosition(centerX, topY - 40);
       promptText = "[E] открыть";
-
-      if (Phaser.Input.Keyboard.JustDown(this.keys.E)) this.openNode(closest);
     } else if (nearCart) {
       let visual;
       if (hall.cart.attached) {
@@ -752,8 +768,6 @@ export default class LibraryScene extends Phaser.Scene {
         this.promptText.setVisible(true);
         this.promptText.setPosition(visual.x, visual.y - CART_SIZE / 2 - 40);
         promptText = hall.cart.attached ? "[E] Отцепить телегу" : "[E] Прицепить телегу";
-
-        if (Phaser.Input.Keyboard.JustDown(this.keys.E)) this.toggleCartAttach();
       }
     } else {
       this.promptText.setVisible(false);
@@ -767,7 +781,28 @@ export default class LibraryScene extends Phaser.Scene {
       }
     }
 
+    // Сохраняем ближайшие объекты для tryInteract
+    this.nearDesk = nearDesk;
+    this.nearNodeId = nearNode ? closest : null;
+    this.nearCart = nearCart;
+
+    // Обработка нажатия клавиши E с клавиатуры
+    if (Phaser.Input.Keyboard.JustDown(this.keys.E)) {
+      this.tryInteract();
+    }
+
     updatePlayerPosition(this.player.x, this.player.y);
+  }
+
+  // Новый метод для взаимодействия (вызывается и с клавиатуры, и с кнопки на телефоне)
+  tryInteract() {
+    if (this.nearDesk) {
+      this.openDesk();
+    } else if (this.nearNodeId) {
+      this.openNode(this.nearNodeId);
+    } else if (this.nearCart) {
+      this.toggleCartAttach();
+    }
   }
 
   toggleCartAttach() {

@@ -2,17 +2,84 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>My Library</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Knowledge Library</title>
   <style>
-    html, body { margin: 0; padding: 0; overflow: hidden; background: #0e0e12; }
-    #app { width: 100vw; height: 100vh; }
+    html, body { 
+      margin: 0; 
+      padding: 0; 
+      overflow: hidden; 
+      background: #0e0e12; 
+      height: 100%;
+      width: 100%;
+      touch-action: none; /* Отключаем зум и скролл на телефоне */
+    }
+    #app { 
+      width: 100vw; 
+      height: 100vh; 
+    }
     button {
-      background: #3a2e1e; color: #e8d8a8; border: 1px solid #8b5a2b;
-      padding: 6px 12px; font-family: monospace; cursor: pointer;
+      background: #3a2e1e; 
+      color: #e8d8a8; 
+      border: 1px solid #8b5a2b;
+      padding: 6px 12px; 
+      font-family: monospace; 
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 4px;
     }
     button:disabled { opacity: 0.4; cursor: default; }
     button:hover:not(:disabled) { background: #5a4020; }
     input, textarea { font-family: monospace; }
+
+    /* Мобильная адаптация */
+    @media (max-width: 768px) {
+      /* Инвентарь снизу */
+      #inventory-bar {
+        height: 70px !important;
+        padding: 0 10px !important;
+      }
+      #inventory-bar > div:nth-child(2) {
+        gap: 6px !important;
+      }
+      #inventory-bar div[style*="width:80px"] {
+        width: 50px !important;
+        height: 40px !important;
+        font-size: 8px !important;
+      }
+
+      /* Боковые панели (полки, шкафы) */
+      #side-panel, #cart-panel {
+        width: 100% !important;
+        right: 0 !important;
+        top: auto !important;
+        bottom: 0 !important;
+        height: 60vh !important;
+        border-left: none !important;
+        border-top: 2px solid #8b5a2b !important;
+        border-radius: 12px 12px 0 0 !important;
+        z-index: 4000 !important;
+      }
+
+      /* Меню стола */
+      #desk-menu > div:first-child {
+        flex-direction: column !important;
+        gap: 8px !important;
+      }
+      #desk-menu > div:first-child > div:last-child {
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+      }
+      
+      /* Миникарта */
+      #mini-map {
+        width: 120px !important;
+        height: 120px !important;
+        bottom: 80px !important;
+        left: 10px !important;
+        opacity: 0.8;
+      }
+    }
   </style>
 </head>
 <body>
