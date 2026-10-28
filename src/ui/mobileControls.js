@@ -25,16 +25,17 @@ export function createMobileControls(onAction) {
   `;
 
   const joystickKnob = document.createElement("div");
-  joystickKnob.style.cssText = `
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.6);
+    joystickContainer.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    right: 20px; 
+    width: 130px;
+    height: 130px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
+    z-index: 2000;
+    touch-action: none;
   `;
   joystickContainer.appendChild(joystickKnob);
   document.body.appendChild(joystickContainer);
@@ -43,10 +44,10 @@ export function createMobileControls(onAction) {
   const actionBtn = document.createElement("div");
   actionBtn.id = "mobile-action-btn";
   actionBtn.textContent = "E";
-  actionBtn.style.cssText = `
+    actionBtn.style.cssText = `
     position: fixed;
     bottom: 90px;
-    right: 20px;
+    left: 20px;   /* <-- ИЗМЕНИЛИ ЗДЕСЬ */
     width: 80px;
     height: 80px;
     background: rgba(255, 217, 102, 0.3);
