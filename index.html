@@ -6,116 +6,69 @@
   <title>Knowledge Library</title>
   <style>
     html, body { 
-      margin: 0; 
-      padding: 0; 
-      overflow: hidden; 
-      background: #0e0e12; 
-      height: 100%;
-      width: 100%;
+      margin: 0; padding: 0; overflow: hidden; background: #0e0e12; height: 100%; width: 100%;
       touch-action: none;
     }
-    #app { 
-      width: 100vw; 
-      height: 100vh; 
-    }
+    #app { width: 100vw; height: 100vh; }
     button {
-      background: #3a2e1e; 
-      color: #e8d8a8; 
-      border: 1px solid #8b5a2b;
-      padding: 8px 12px; 
-      font-family: monospace; 
-      cursor: pointer;
-      font-size: 14px;
-      border-radius: 4px;
+      background: #3a2e1e; color: #e8d8a8; border: 1px solid #8b5a2b;
+      padding: 8px 12px; font-family: monospace; cursor: pointer;
+      font-size: 14px; border-radius: 4px;
     }
     button:disabled { opacity: 0.4; cursor: default; }
+    button:hover:not(:disabled) { background: #5a4020; }
     input, textarea { font-family: monospace; }
 
-    /* МОБИЛЬНАЯ ВЕРСИЯ (вертикальная) */
-    @media (max-width: 768px) and (orientation: portrait) {
-      /* Инвентарь снизу — делаем компактным */
-      #inventory-bar {
-        height: 60px !important;
-        padding: 0 5px !important;
-        gap: 8px !important;
-      }
-      #inventory-bar > div:nth-child(2) {
-        gap: 4px !important;
-      }
-      #inventory-bar div[style*="width:80px"] {
-        width: 45px !important;
-        height: 45px !important;
-        font-size: 8px !important;
-      }
-      /* Кнопки на слотах инвентаря (стрелочки) */
-      #inventory-bar div[style*="width:22px"] {
-        width: 16px !important;
-        height: 16px !important;
-        font-size: 10px !important;
-      }
+    /* Стили для Quill (чтобы не ломать тёмную тему) */
+    #book-modal .ql-toolbar {
+      background: #e0dcd0;
+      border-bottom: 1px solid #5a4020;
+      border-radius: 4px 4px 0 0;
+      border-top: none; border-left: none; border-right: none;
+    }
+    #book-modal .ql-container {
+      font-family: 'Times New Roman', serif;
+      font-size: 16px;
+      border: none;
+    }
+    #book-modal .ql-editor {
+      padding: 20px;
+      min-height: 300px;
+      color: #000;
+    }
+    /* Возвращаем тёмный стиль инпуту названия */
+    #book-modal #book-title {
+      background: #2a231a !important;
+      color: #e8d8a8 !important;
+      border: 1px solid #5a4020 !important;
+      padding: 10px !important;
+    }
 
-      /* Боковые панели (полки, шкафы) — на всю ширину снизу */
+    /* МОБИЛЬНАЯ АДАПТАЦИЯ */
+    @media (max-width: 768px) {
+      #inventory-bar { height: 70px !important; padding: 0 10px !important; }
+      #inventory-bar > div:nth-child(2) { gap: 6px !important; }
+      #inventory-bar div[style*="width:80px"] { width: 50px !important; height: 40px !important; font-size: 8px !important; }
+
       #side-panel, #cart-panel {
-        width: 100% !important;
-        height: 70vh !important; /* Чуть больше, чтобы удобнее выбирать */
-        border-radius: 16px 16px 0 0 !important;
+        width: 100% !important; right: 0 !important; top: auto !important; bottom: 0 !important;
+        height: 60vh !important; border-left: none !important; border-top: 2px solid #8b5a2b !important;
+        border-radius: 12px 12px 0 0 !important; z-index: 4000 !important;
       }
 
-      /* Меню стола — делаем кнопки крупнее и в столбик */
-      #desk-menu > div:first-child {
-        flex-direction: column !important;
-        padding: 12px !important;
-        gap: 12px !important;
-      }
-      #desk-menu > div:first-child > div:last-child {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px !important;
-      }
-      #desk-menu button {
-        width: 100%;
-        padding: 10px !important;
-        font-size: 13px !important;
-      }
+      #desk-menu > div:first-child { flex-direction: column !important; gap: 8px !important; }
+      #desk-menu > div:first-child > div:last-child { justify-content: center !important; flex-wrap: wrap !important; }
       
-      /* Миникарта в левом верхнем углу */
-      #mini-map {
-        width: 100px !important;
-        height: 100px !important;
-        top: 10px !important;
-        left: 10px !important;
-        bottom: auto !important;
-        border-width: 2px !important;
-        opacity: 0.85;
-      }
+      #mini-map { width: 100px !important; height: 100px !important; top: 10px !important; left: 10px !important; bottom: auto !important; opacity: 0.85; }
 
-      /* КНИГА (модалка) — на весь экран! */
+      /* Книга на весь экран */
       #book-modal > div {
-        width: 100vw !important;
-        height: 100vh !important;
-        max-width: none !important;
-        border-radius: 0 !important;
-        border: none !important;
-        padding: 10px !important;
-        display: flex !important;
-        flex-direction: column !important;
+        width: 100vw !important; height: 100vh !important; max-width: none !important;
+        border-radius: 0 !important; border: none !important; padding: 10px !important;
       }
-      #book-modal input#book-title {
-        font-size: 18px !important;
-        padding: 10px !important;
-      }
-      #book-modal div[style*="height:340px"] {
-        height: auto !important;
-        flex: 1 !important; /* Текст растягивается на всё свободное место */
-        margin-bottom: 10px;
-      }
-      #book-modal textarea#page-content {
-        font-size: 16px !important; /* Крупный шрифт для телефона */
-      }
-      #book-modal button {
-        padding: 12px !important;
-        font-size: 14px !important;
-      }
+      #book-modal .ql-editor { padding: 10px !important; }
+      #book-modal .ql-toolbar { padding: 4px !important; }
+      #book-modal .ql-toolbar .ql-formats { margin-right: 8px !important; }
     }
   </style>
 </head>

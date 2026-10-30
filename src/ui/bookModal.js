@@ -1,3 +1,5 @@
+import Quill from "quill";
+import "quill/dist/quill.snow.css";
 import { uploadFileToGitHub } from "../data/storage.js";
 
 export function openBookModal(book, world, onSave) {
@@ -11,30 +13,48 @@ export function openBookModal(book, world, onSave) {
     display: flex; align-items: center; justify-content: center;
     z-index: 2000; font-family: monospace;
   `;
-
   document.body.appendChild(modal);
 
+  // --- АВАРИЙНАЯ МИГРАЦИЯ СТАРЫХ КНИГ ---
+  if (book.pages && book.pages.length > 0 && typeof book.pages[0] === "string") {
+    book.pages = book.pages.map((text, i) => ({
+      id: `page_${book.id}_${i}_${Date.now()}`,
+      content: text ? `<p>${text.replace(/\n/g, "<br>")}</p>` : "",
+      files: []
+    }));
+  }
+
   let pageIndex = 0;
+  let quillInstance = null;
 
   function render() {
-    const page = book.pages[pageIndex] ?? "";
+    const pageObj = book.pages[pageIndex];
+    const pageContent = pageObj ? pageObj.content : "";
+    const pageFiles = pageObj ? pageObj.files : [];
 
     modal.innerHTML = `
-      <div style="background:#1e1a14; border:2px solid #8b5a2b; padding:20px; width:600px; color:#e8d8a8;">
+      <div style="background:#1e1a14; border:2px solid #8b5a2b; padding:20px; width:900px; max-width:98vw; color:#e8d8a8; display:flex; flex-direction:column; height: 95vh; box-sizing: border-box; border-radius: 8px;">
+        
         <input id="book-title" placeholder="Название книги" value="${escapeAttr(book.title)}"
-          style="width:100%; background:#2a231a; color:#e8d8a8; border:1px solid #5a4020; padding:8px; font-size:16px; margin-bottom:12px; font-family:inherit; box-sizing:border-box;" />
-        <div style="background:#2a231a; border:1px solid #5a4020; padding:12px; height:340px;">
-          <textarea id="page-content" placeholder="Страница ${pageIndex + 1}..."
-            style="width:100%; height:100%; background:transparent; color:#e8d8a8; border:none; resize:none; outline:none; font-family:inherit; font-size:14px; line-height:1.6; box-sizing:border-box;"
-          >${escapeHtml(page)}</textarea>
+          style="width:100%; background:#2a231a; color:#e8d8a8; border:1px solid #5a4020; padding:10px; font-size:16px; margin-bottom:12px; font-family:inherit; box-sizing:border-box; border-radius: 4px;" />
+        
+        <!-- Контейнер для Quill -->
+        <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; border:1px solid #5a4020; border-radius: 4px; background: #f3f0e8;">
+          <div id="editor-container" style="flex:1; overflow-y:auto;"></div>
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
-          <div>
+
+        <!-- Прикрепленные файлы -->
+        <div id="files-list" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;">
+          ${pageFiles.map(f => `<a href="${f.url}" target="_blank" style="color:#ffd966; font-size:12px; background:#3a2e1e; padding:4px 8px; border-radius:4px; text-decoration:none; border: 1px solid #5a4020;">📎 ${escapeHtml(f.name)}</a>`).join("")}
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap: wrap; gap: 10px;">
+          <div style="display:flex; align-items:center; gap: 8px;">
             <button id="prev-page" ${pageIndex === 0 ? "disabled" : ""}>◀</button>
-            <span style="margin:0 12px;">${pageIndex + 1} / ${book.pages.length}</span>
+            <span style="margin:0 8px;">${pageIndex + 1} / ${book.pages.length}</span>
             <button id="next-page" ${pageIndex === book.pages.length - 1 ? "disabled" : ""}>▶</button>
-            <button id="add-page" style="margin-left:12px;">+ страница</button>
-            <button id="attach-file" style="margin-left:12px;" title="Прикрепить файл">📎 Файл</button>
+            <button id="add-page">+ страница</button>
+            <button id="attach-file" title="Прикрепить файл или картинку">📎 Файл</button>
           </div>
           <div style="display:flex; gap:8px;">
             <button id="book-delete" style="background:#5a2020; border-color:#8b2b2b; color:#ffcccc;">Удалить</button>
@@ -44,62 +64,65 @@ export function openBookModal(book, world, onSave) {
       </div>
     `;
 
+    // Инициализация Quill
+    quillInstance = new Quill("#editor-container", {
+      theme: "snow",
+      modules: {
+        toolbar: [
+          [{ 'header': [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ 'color': [] }, { 'background': [] }],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          ['link', 'image', 'table'],
+          ['clean']
+        ]
+      }
+    });
+
+        // Блокируем передачу клавиш в Phaser
+    quillInstance.root.addEventListener("keydown", (e) => e.stopPropagation());
+    quillInstance.root.addEventListener("keyup", (e) => e.stopPropagation());
+    quillInstance.root.addEventListener("keypress", (e) => e.stopPropagation());
+
+    quillInstance.clipboard.dangerouslyPasteHTML(pageContent);
+
+    quillInstance.on("text-change", () => {
+      book.pages[pageIndex].content = quillInstance.root.innerHTML;
+    });
+
     const titleInput = document.getElementById("book-title");
-    const pageArea = document.getElementById("page-content");
     const prevBtn = document.getElementById("prev-page");
     const nextBtn = document.getElementById("next-page");
     const addBtn = document.getElementById("add-page");
     const closeBtn = document.getElementById("close-book");
     const deleteBtn = document.getElementById("book-delete");
-    const attachBtn = document.getElementById("attach-file"); // <-- НОВАЯ КНОПКА
+    const attachBtn = document.getElementById("attach-file");
 
-    titleInput.addEventListener("input", () => {
-      book.title = titleInput.value;
-    });
+    titleInput.addEventListener("input", () => { book.title = titleInput.value; });
 
-    pageArea.addEventListener("input", () => {
-      book.pages[pageIndex] = pageArea.value;
-    });
-
-    [titleInput, pageArea].forEach((el) => {
-      el.addEventListener("keydown", (e) => e.stopPropagation());
-      el.addEventListener("keyup", (e) => e.stopPropagation());
-      el.addEventListener("keypress", (e) => e.stopPropagation());
-    });
-
-    [prevBtn, nextBtn, addBtn, closeBtn, deleteBtn, attachBtn].forEach((el) => {
+    [titleInput, closeBtn, deleteBtn, attachBtn, prevBtn, nextBtn, addBtn].forEach((el) => {
       el.addEventListener("keydown", (e) => e.stopPropagation());
       el.addEventListener("keyup", (e) => e.stopPropagation());
     });
 
-    prevBtn.onclick = () => {
-      if (pageIndex > 0) { pageIndex--; render(); }
-    };
-
-    nextBtn.onclick = () => {
-      if (pageIndex < book.pages.length - 1) { pageIndex++; render(); }
-    };
-
+    prevBtn.onclick = () => { if (pageIndex > 0) { pageIndex--; render(); } };
+    nextBtn.onclick = () => { if (pageIndex < book.pages.length - 1) { pageIndex++; render(); } };
+    
     addBtn.onclick = () => {
-      book.pages.push("");
+      book.pages.push({ id: `page_${Date.now()}`, content: "", files: [] });
       pageIndex = book.pages.length - 1;
       render();
     };
 
-    closeBtn.onclick = () => {
-      modal.remove();
-      onSave();
-    };
-
+    closeBtn.onclick = () => { modal.remove(); onSave(); };
+    
     deleteBtn.onclick = () => {
-      const confirmed = confirm("Удалить эту книгу?");
-      if (!confirmed) return;
+      if (!confirm("Удалить эту книгу?")) return;
       book.__deleted = true;
       modal.remove();
       onSave();
     };
 
-    // --- ЛОГИКА ЗАГРУЗКИ ФАЙЛА (ДОБАВЛЕНО) ---
     attachBtn.onclick = () => {
       const fileInput = document.createElement("input");
       fileInput.type = "file";
@@ -114,21 +137,23 @@ export function openBookModal(book, world, onSave) {
         try {
           const fileUrl = await uploadFileToGitHub(file);
           
-          const start = pageArea.selectionStart;
-          const end = pageArea.selectionEnd;
-          const text = pageArea.value;
-          
-          // Вставляем ссылку в текст
-          const insertText = `\n[📎 ${file.name}](${fileUrl})\n`;
-          
-          pageArea.value = text.substring(0, start) + insertText + text.substring(end);
-          book.pages[pageIndex] = pageArea.value; 
-          
+          if (file.type.startsWith("image/")) {
+            const range = quillInstance.getSelection(true);
+            quillInstance.insertEmbed(range.index, 'image', fileUrl);
+            quillInstance.setSelection(range.index + 1);
+          } else {
+            book.pages[pageIndex].files.push({ name: file.name, url: fileUrl });
+            const filesList = document.getElementById("files-list");
+            const a = document.createElement("a");
+            a.href = fileUrl;
+            a.target = "_blank";
+            a.style.cssText = "color:#ffd966; font-size:12px; background:#3a2e1e; padding:4px 8px; border-radius:4px; text-decoration:none; border: 1px solid #5a4020;";
+            a.textContent = `📎 ${file.name}`;
+            filesList.appendChild(a);
+          }
+
           attachBtn.textContent = "✅ Готово!";
-          setTimeout(() => {
-            attachBtn.textContent = "📎 Файл";
-            attachBtn.disabled = false;
-          }, 2000);
+          setTimeout(() => { attachBtn.textContent = "📎 Файл"; attachBtn.disabled = false; }, 2000);
         } catch (err) {
           alert(err.message);
           attachBtn.textContent = "📎 Файл";
@@ -140,7 +165,7 @@ export function openBookModal(book, world, onSave) {
     };
 
     if (book.title && book.title.trim().length > 0) {
-      pageArea.focus();
+      quillInstance.focus();
     } else {
       titleInput.focus();
     }
@@ -151,14 +176,8 @@ export function openBookModal(book, world, onSave) {
 
 function escapeHtml(s) {
   return (s || "").replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   }[c]));
 }
 
-function escapeAttr(s) {
-  return escapeHtml(s);
-}
+function escapeAttr(s) { return escapeHtml(s); }

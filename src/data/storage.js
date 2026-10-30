@@ -73,6 +73,28 @@ export function hydrateBooks(world) {
     if (!node.type) node.type = "slot";
     if (!node.hallId && world.currentHallId) node.hallId = world.currentHallId;
   }
+
+  // === МИГРАЦИЯ СТРАНИЦ КНИГ (ТЕКСТ -> ОБЪЕКТ) ===
+  for (const book of Object.values(world.books)) {
+    if (book.pages) {
+      book.pages = book.pages.map((page, index) => {
+        // Если это старая книга (строка), превращаем в объект
+        if (typeof page === "string") {
+          return {
+            id: `page_${book.id}_${index}_${Date.now()}`,
+            content: page ? `<p>${page.replace(/\n/g, "<br>")}</p>` : "",
+            files: []
+          };
+        }
+        // Если уже объект, но нет полей
+        return {
+          id: page.id || `page_${book.id}_${index}`,
+          content: page.content || "",
+          files: page.files || []
+        };
+      });
+    }
+  }
 }
 
 export function wipeWorld() {

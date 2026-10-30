@@ -306,10 +306,24 @@ function renderBookSlot(world, bookId, slotIndex, hasBookInHand) {
   }
 
   const filled = isBookFilled(book);
-  const pages = book.pages.filter((p) => p && p.trim() !== "").length;
+  
+  // Считаем количество страниц (теперь это объекты)
+  let pagesCount = 0;
+  if (book.pages) {
+    pagesCount = book.pages.filter((p) => {
+      if (typeof p === "string") return p.trim() !== "";
+      if (p && p.content) {
+        // Убираем HTML-теги, чтобы проверить, есть ли реальный текст
+        const textOnly = p.content.replace(/<[^>]*>/g, "").trim();
+        return textOnly !== "";
+      }
+      return false;
+    }).length;
+  }
+
   const title = book.title ? escapeHtml(book.title) : "(пусто)";
-  const width = Math.min(20 + pages * 6, 70);
-  const height = filled ? Math.min(80 + pages * 8, 160) : 80;
+  const width = Math.min(20 + pagesCount * 6, 70);
+  const height = filled ? Math.min(80 + pagesCount * 8, 160) : 80;
   const bg = filled ? "#a06a3a" : "#3a2e1e";
   const border = filled ? "#e8d8a8" : "#5a4020";
   const color = filled ? "#1e1a14" : "#8b7a5a";
