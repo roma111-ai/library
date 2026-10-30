@@ -47,7 +47,7 @@ export function createMobileControls(onAction) {
     actionBtn.style.cssText = `
     position: fixed;
     bottom: 90px;
-    left: 20px;   /* <-- ИЗМЕНИЛИ ЗДЕСЬ */
+    left: 20px; 
     width: 80px;
     height: 80px;
     background: rgba(255, 217, 102, 0.3);

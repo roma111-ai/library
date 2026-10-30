@@ -1,3 +1,5 @@
+import { uploadFileToGitHub } from "../data/storage.js";
+
 export function openBookModal(book, world, onSave) {
   let modal = document.getElementById("book-modal");
   if (modal) modal.remove();
@@ -32,6 +34,7 @@ export function openBookModal(book, world, onSave) {
             <span style="margin:0 12px;">${pageIndex + 1} / ${book.pages.length}</span>
             <button id="next-page" ${pageIndex === book.pages.length - 1 ? "disabled" : ""}>▶</button>
             <button id="add-page" style="margin-left:12px;">+ страница</button>
+            <button id="attach-file" style="margin-left:12px;" title="Прикрепить файл">📎 Файл</button>
           </div>
           <div style="display:flex; gap:8px;">
             <button id="book-delete" style="background:#5a2020; border-color:#8b2b2b; color:#ffcccc;">Удалить</button>
@@ -48,6 +51,7 @@ export function openBookModal(book, world, onSave) {
     const addBtn = document.getElementById("add-page");
     const closeBtn = document.getElementById("close-book");
     const deleteBtn = document.getElementById("book-delete");
+    const attachBtn = document.getElementById("attach-file"); // <-- НОВАЯ КНОПКА
 
     titleInput.addEventListener("input", () => {
       book.title = titleInput.value;
@@ -63,7 +67,7 @@ export function openBookModal(book, world, onSave) {
       el.addEventListener("keypress", (e) => e.stopPropagation());
     });
 
-    [prevBtn, nextBtn, addBtn, closeBtn, deleteBtn].forEach((el) => {
+    [prevBtn, nextBtn, addBtn, closeBtn, deleteBtn, attachBtn].forEach((el) => {
       el.addEventListener("keydown", (e) => e.stopPropagation());
       el.addEventListener("keyup", (e) => e.stopPropagation());
     });
@@ -93,6 +97,46 @@ export function openBookModal(book, world, onSave) {
       book.__deleted = true;
       modal.remove();
       onSave();
+    };
+
+    // --- ЛОГИКА ЗАГРУЗКИ ФАЙЛА (ДОБАВЛЕНО) ---
+    attachBtn.onclick = () => {
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      
+      fileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        attachBtn.textContent = "⏳ Загрузка...";
+        attachBtn.disabled = true;
+
+        try {
+          const fileUrl = await uploadFileToGitHub(file);
+          
+          const start = pageArea.selectionStart;
+          const end = pageArea.selectionEnd;
+          const text = pageArea.value;
+          
+          // Вставляем ссылку в текст
+          const insertText = `\n[📎 ${file.name}](${fileUrl})\n`;
+          
+          pageArea.value = text.substring(0, start) + insertText + text.substring(end);
+          book.pages[pageIndex] = pageArea.value; 
+          
+          attachBtn.textContent = "✅ Готово!";
+          setTimeout(() => {
+            attachBtn.textContent = "📎 Файл";
+            attachBtn.disabled = false;
+          }, 2000);
+        } catch (err) {
+          alert(err.message);
+          attachBtn.textContent = "📎 Файл";
+          attachBtn.disabled = false;
+        }
+      };
+      
+      fileInput.click();
     };
 
     if (book.title && book.title.trim().length > 0) {

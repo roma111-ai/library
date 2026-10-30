@@ -188,3 +188,59 @@ export async function loadFromCloud() {
     throw err;
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// ЗАГРУЗКА ФАЙЛОВ В GITHUB
+
+const GITHUB_OWNER = "roma111-ai";
+const GITHUB_REPO = "library-files";
+
+export async function uploadFileToGitHub(file) {
+  // 1. Спрашиваем токен, если его нет в памяти
+  let token = localStorage.getItem("github-files-token");
+  if (!token) {
+    token = prompt("Введи GitHub Token для загрузки файлов (Fine-grained):");
+    if (!token) throw new Error("Загрузка отменена — нет токена");
+    localStorage.setItem("github-files-token", token);
+  }
+
+  // 2. Читаем файл в Base64
+  const reader = new FileReader();
+  const base64Content = await new Promise((resolve, reject) => {
+    reader.onload = () => {
+      const base64 = reader.result.split(",")[1]; // Убираем префикс data:...
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  // 3. Формируем путь и отправляем
+  const filePath = `uploads/${Date.now()}_${file.name}`;
+  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`;
+
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github.v3+json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: `Upload ${file.name}`,
+      content: base64Content,
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    if (res.status === 401 || res.status === 403) {
+      localStorage.removeItem("github-files-token"); // Сброс неверного токена
+      throw new Error("Неверный токен GitHub. Попробуй заново.");
+    }
+    throw new Error(`Ошибка GitHub: ${error.message || res.status}`);
+  }
+
+  const data = await res.json();
+  return data.content.download_url; // Возвращаем прямую ссылку
+}
