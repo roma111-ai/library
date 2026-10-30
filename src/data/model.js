@@ -97,9 +97,35 @@ export function createBook(id) {
 
 export function isBookFilled(book) {
   if (!book) return false;
+  
+  // 1. Проверяем заголовок
   if (book.title && book.title.trim().length > 0) return true;
+  
+  // 2. Проверяем страницы
   if (!book.pages || !Array.isArray(book.pages)) return false;
-  return book.pages.some((p) => typeof p === "string" && p.trim().length > 0);
+  
+  return book.pages.some((p) => {
+    // Если страница — это старая строка (до миграции)
+    if (typeof p === "string") {
+      return p.trim().length > 0;
+    }
+    
+    // Если страница — это новый объект
+    if (typeof p === "object" && p !== null) {
+      // Проверяем, есть ли в HTML хоть какой-то текст или картинка (тег <img>)
+      const hasContent = p.content && (
+        p.content.replace(/<[^>]*>/g, "").trim().length > 0 || 
+        p.content.includes("<img")
+      );
+      
+      // Проверяем, есть ли прикрепленные файлы
+      const hasFiles = p.files && p.files.length > 0;
+      
+      return hasContent || hasFiles;
+    }
+    
+    return false;
+  });
 }
 
 export function isNodeFilled(world, node) {
