@@ -15,7 +15,7 @@ export function openBookModal(book, world, onSave) {
   `;
   document.body.appendChild(modal);
 
-  // --- АВАРИЙНАЯ МИГРАЦИЯ СТАРЫХ КНИГ ---
+  // АВАРИЙНАЯ МИГРАЦИЯ
   if (book.pages && book.pages.length > 0 && typeof book.pages[0] === "string") {
     book.pages = book.pages.map((text, i) => ({
       id: `page_${book.id}_${i}_${Date.now()}`,
@@ -38,12 +38,10 @@ export function openBookModal(book, world, onSave) {
         <input id="book-title" placeholder="Название книги" value="${escapeAttr(book.title)}"
           style="width:100%; background:#2a231a; color:#e8d8a8; border:1px solid #5a4020; padding:10px; font-size:16px; margin-bottom:12px; font-family:inherit; box-sizing:border-box; border-radius: 4px;" />
         
-        <!-- Контейнер для Quill -->
         <div style="flex:1; overflow:hidden; display:flex; flex-direction:column; border:1px solid #5a4020; border-radius: 4px; background: #f3f0e8;">
           <div id="editor-container" style="flex:1; overflow-y:auto;"></div>
         </div>
 
-        <!-- Прикрепленные файлы -->
         <div id="files-list" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;">
           ${pageFiles.map(f => `<a href="${f.url}" target="_blank" style="color:#ffd966; font-size:12px; background:#3a2e1e; padding:4px 8px; border-radius:4px; text-decoration:none; border: 1px solid #5a4020;">📎 ${escapeHtml(f.name)}</a>`).join("")}
         </div>
@@ -64,7 +62,6 @@ export function openBookModal(book, world, onSave) {
       </div>
     `;
 
-    // Инициализация Quill
     quillInstance = new Quill("#editor-container", {
       theme: "snow",
       modules: {
@@ -79,16 +76,19 @@ export function openBookModal(book, world, onSave) {
       }
     });
 
-        // Блокируем передачу клавиш в Phaser
+    quillInstance.clipboard.dangerouslyPasteHTML(pageContent);
+
+    // ВАЖНО: Сохраняем контент при каждом изменении
+    quillInstance.on("text-change", () => {
+      if (book.pages[pageIndex]) {
+        book.pages[pageIndex].content = quillInstance.root.innerHTML;
+      }
+    });
+
+    // Блокируем передачу клавиш в Phaser
     quillInstance.root.addEventListener("keydown", (e) => e.stopPropagation());
     quillInstance.root.addEventListener("keyup", (e) => e.stopPropagation());
     quillInstance.root.addEventListener("keypress", (e) => e.stopPropagation());
-
-    quillInstance.clipboard.dangerouslyPasteHTML(pageContent);
-
-    quillInstance.on("text-change", () => {
-      book.pages[pageIndex].content = quillInstance.root.innerHTML;
-    });
 
     const titleInput = document.getElementById("book-title");
     const prevBtn = document.getElementById("prev-page");
@@ -99,11 +99,10 @@ export function openBookModal(book, world, onSave) {
     const attachBtn = document.getElementById("attach-file");
 
     titleInput.addEventListener("input", () => { book.title = titleInput.value; });
-
-    [titleInput, closeBtn, deleteBtn, attachBtn, prevBtn, nextBtn, addBtn].forEach((el) => {
-      el.addEventListener("keydown", (e) => e.stopPropagation());
-      el.addEventListener("keyup", (e) => e.stopPropagation());
-    });
+    
+    // Блокируем клавиши для инпута
+    titleInput.addEventListener("keydown", (e) => e.stopPropagation());
+    titleInput.addEventListener("keyup", (e) => e.stopPropagation());
 
     prevBtn.onclick = () => { if (pageIndex > 0) { pageIndex--; render(); } };
     nextBtn.onclick = () => { if (pageIndex < book.pages.length - 1) { pageIndex++; render(); } };
@@ -114,7 +113,12 @@ export function openBookModal(book, world, onSave) {
       render();
     };
 
-    closeBtn.onclick = () => { modal.remove(); onSave(); };
+    // ВАЖНО: Перед закрытием принудительно сохраняем текст из Quill
+    closeBtn.onclick = () => { 
+      book.pages[pageIndex].content = quillInstance.root.innerHTML; 
+      modal.remove(); 
+      onSave(); 
+    };
     
     deleteBtn.onclick = () => {
       if (!confirm("Удалить эту книгу?")) return;

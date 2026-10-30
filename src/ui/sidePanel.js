@@ -226,11 +226,9 @@ export function openSidePanel(world, node, { onClose, onOpenChild, onChange }) {
             render();
             return;
           }
-          const isFilled =
-            newBook.title.trim() !== "" ||
-            newBook.pages.some((p) => p && p.trim() !== "");
-
-          if (isFilled) {
+          
+          // ИСПОЛЬЗУЕМ НАШУ НОВУЮ УМНУЮ ПРОВЕРКУ
+          if (isBookFilled(newBook)) {
             node.bookIds[slotIndex] = newId;
           } else {
             delete world.books[newId];
@@ -313,9 +311,8 @@ function renderBookSlot(world, bookId, slotIndex, hasBookInHand) {
     pagesCount = book.pages.filter((p) => {
       if (typeof p === "string") return p.trim() !== "";
       if (p && p.content) {
-        // Убираем HTML-теги, чтобы проверить, есть ли реальный текст
         const textOnly = p.content.replace(/<[^>]*>/g, "").trim();
-        return textOnly !== "";
+        return textOnly !== "" || p.content.includes("<img");
       }
       return false;
     }).length;
